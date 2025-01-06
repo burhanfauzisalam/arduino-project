@@ -1,0 +1,10 @@
+ESP32
+https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+
+ESP8266
+http://arduino.esp8266.com/stable/package_esp8266com_index.json
+
+
+Board
+
+ESP8266 NodeMCU LoLin V3 - NodeMCU 1.0
