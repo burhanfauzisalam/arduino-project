@@ -4,8 +4,8 @@
 // Inisialisasi broker MQTT
 const char* mqtt_server = "54.179.124.238"; // Ganti dengan alamat broker Anda
 const int mqtt_port = 8883;
-const char* mqtt_topic_status = "esp8266/status/device01";
-const char* mqtt_topic_control = "esp8266/relay/control/device01";
+const char* mqtt_topic_status = "esp01/status/device01";
+const char* mqtt_topic_control = "esp01/relay/device01";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -14,11 +14,8 @@ unsigned long previousMillis = 0; // Variabel untuk menyimpan waktu sebelumnya
 const long interval = 3000;       // Interval pengiriman data dalam milidetik
 
 // Pin relay
-const int relayPin1 = D1;
-const int relayPin2 = D3;
-
-const int lightBlink = D0;
-const int lightNoWifi = D2;
+const int relayPin1 = 0;
+const int relayPin2 = 2;
 
 // Fungsi callback untuk menerima pesan MQTT
 void callback(char* topic, byte* payload, unsigned int length) {
@@ -34,16 +31,16 @@ void callback(char* topic, byte* payload, unsigned int length) {
   // Kontrol relay berdasarkan topik dan pesan
   if (String(topic) == mqtt_topic_control) {
     if (message == "RELAY1_ON") {
-      digitalWrite(relayPin1, LOW); // Aktifkan relay 1 (LOW untuk aktif tergantung modul)
+      digitalWrite(relayPin1, HIGH); // Aktifkan relay 1 (LOW untuk aktif tergantung modul)
       Serial.println("Relay 1 ON");
     } else if (message == "RELAY1_OFF") {
-      digitalWrite(relayPin1, HIGH); // Matikan relay 1
+      digitalWrite(relayPin1, LOW); // Matikan relay 1
       Serial.println("Relay 1 OFF");
     } else if (message == "RELAY2_ON") {
-      digitalWrite(relayPin2, LOW); // Aktifkan relay 2
+      digitalWrite(relayPin2, HIGH); // Aktifkan relay 2
       Serial.println("Relay 2 ON");
     } else if (message == "RELAY2_OFF") {
-      digitalWrite(relayPin2, HIGH); // Matikan relay 2
+      digitalWrite(relayPin2, LOW); // Matikan relay 2
       Serial.println("Relay 2 OFF");
     } else {
       Serial.println("Perintah tidak dikenali!");
@@ -55,7 +52,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 void reconnectMQTT() {
   while (!client.connected()) {
     Serial.print("Menghubungkan ke broker MQTT...");
-    if (client.connect("ESP8266Client")) {
+    if (client.connect("ESP01Client")) {
       Serial.println("Terhubung ke broker MQTT");
       // Subscribe ke topik kontrol
       client.subscribe(mqtt_topic_control);
@@ -71,16 +68,8 @@ void reconnectMQTT() {
 
 void setup() {
   // Konfigurasi pin dan Serial
-  pinMode(lightBlink, OUTPUT);
-  pinMode(lightNoWifi, OUTPUT);
   pinMode(relayPin1, OUTPUT);
   pinMode(relayPin2, OUTPUT);
-
-  digitalWrite(lightNoWifi, HIGH);
-
-  // Matikan relay (HIGH untuk nonaktif tergantung modul)
-  digitalWrite(relayPin1, HIGH);
-  digitalWrite(relayPin2, HIGH);
 
   Serial.begin(115200);
 
@@ -88,8 +77,7 @@ void setup() {
   WiFiManager wifiManager;
 
   // Memulai auto-connect ke WiFi
-  if (!wifiManager.autoConnect("ESP8266-Relay")) {
-    digitalWrite(lightNoWifi, HIGH);
+  if (!wifiManager.autoConnect("ESP01-Relay")) {
     Serial.println("Gagal menyambung ke WiFi. Restart...");
     delay(3000);
     ESP.restart();
@@ -98,8 +86,6 @@ void setup() {
   Serial.println("Berhasil terhubung ke WiFi.");
   Serial.print("IP Address: ");
   Serial.println(WiFi.localIP());
-  digitalWrite(lightNoWifi, LOW);
-//  digitalWrite(lightBlink, HIGH);
 
   // Mengatur server dan port MQTT
   client.setServer(mqtt_server, mqtt_port);
@@ -109,14 +95,12 @@ void setup() {
 void loop() {
   // Cek status WiFi
   if (WiFi.status() != WL_CONNECTED) {
-    digitalWrite(lightNoWifi, HIGH);
     Serial.println("Koneksi WiFi terputus! Mencoba menyambung ulang...");
     WiFiManager wifiManager;
     if (!wifiManager.autoConnect("ESP8266-Relay")) {
       Serial.println("Gagal menyambung ulang. Restart...");
       delay(3000);
       ESP.restart();
-      digitalWrite(lightNoWifi, HIGH);
     }
   }
 
@@ -138,9 +122,6 @@ void loop() {
 
     if (client.publish(mqtt_topic_status, payload)) {
       Serial.println("Data berhasil dikirim!");
-      digitalWrite(lightBlink, HIGH);
-      delay(2000);
-      digitalWrite(lightBlink, LOW);
     } else {
       Serial.println("Gagal mengirim data!");
     }
