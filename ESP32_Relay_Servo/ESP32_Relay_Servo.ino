@@ -1,6 +1,6 @@
 #include <WiFiManager.h> // Library WiFiManager
 #include <PubSubClient.h> // Library MQTT
-#include <Servo.h> // Library Servo
+#include <ESP32Servo.h> // Library Servo
 
 // Inisialisasi broker MQTT
 const char* mqtt_server = "bukansarjanakomputer.web.id"; // Ganti dengan alamat broker Anda
