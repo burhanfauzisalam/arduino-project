@@ -7,8 +7,13 @@ const char* mqtt_server = "bukansarjanakomputer.web.id"; // Ganti dengan alamat 
 const int mqtt_port = 8883;
 
 // Variabel yang bisa diubah
-const char* deviceId = "device02"; // Ubah sesuai kebutuhan
-const char* clientId = "ESP32"; // Ubah sesuai kebutuhan
+const char* deviceId = "device01"; // Ubah sesuai kebutuhan
+char clientId[20]; // Buffer untuk Client ID unik
+
+void generateUniqueClientId() {
+  snprintf(clientId, sizeof(clientId), "Smarthome-%d", random(1000, 9999));
+}
+
 
 // Format topik MQTT
 typedef struct {
@@ -25,8 +30,8 @@ unsigned long previousMillis = 0; // Variabel untuk menyimpan waktu sebelumnya
 const long interval = 3000;       // Interval pengiriman data dalam milidetik
 
 // Pin untuk kontrol
-const int servoPin = 0;  // GPIO 0 untuk Servo
-const int relayPin2 = 2;  // GPIO 2 untuk Relay
+const int servoPin = D4;  // untuk Servo
+const int relayPin = D5;  // untuk Relay
 
 Servo myServo; // Objek Servo
 
@@ -56,11 +61,11 @@ void callback(char* topic, byte* payload, unsigned int length) {
       myServo.write(160); // Servo ke posisi 0 derajat
       Serial.println("Servo bergerak ke 0 derajat");
     } else if (message == "RELAY2_ON") {
-      digitalWrite(relayPin2, HIGH); // Aktifkan relay 2
-      Serial.println("Relay 2 ON");
+      digitalWrite(relayPin, HIGH); // Aktifkan relay 
+      Serial.println("Relay ON");
     } else if (message == "RELAY2_OFF") {
-      digitalWrite(relayPin2, LOW); // Matikan relay 2
-      Serial.println("Relay 2 OFF");
+      digitalWrite(relayPin, LOW); // Matikan relay 
+      Serial.println("Relay OFF");
     } else {
       Serial.println("Perintah tidak dikenali!");
     }
@@ -86,9 +91,11 @@ void reconnectMQTT() {
 
 void setup() {
   // Konfigurasi pin dan Serial
-  pinMode(relayPin2, OUTPUT);
+  pinMode(relayPin, OUTPUT);
   Serial.begin(115200);
 
+  generateUniqueClientId();
+  
   // Inisialisasi topik MQTT
   updateMqttTopics();
 
@@ -99,8 +106,11 @@ void setup() {
   // Membuat objek WiFiManager
   WiFiManager wifiManager;
 
+  // Menyesuaikan nama AP dengan deviceId
+  String apName = "Smarthome-" + String(deviceId);
+
   // Memulai auto-connect ke WiFi
-  if (!wifiManager.autoConnect("ESP01-Relay")) {
+  if (!wifiManager.autoConnect(apName.c_str())) {
     Serial.println("Gagal menyambung ke WiFi. Restart...");
     delay(3000);
     ESP.restart();
@@ -120,7 +130,8 @@ void loop() {
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("Koneksi WiFi terputus! Mencoba menyambung ulang...");
     WiFiManager wifiManager;
-    if (!wifiManager.autoConnect("ESP01-Relay")) {
+    String apName = "Smarthome-" + String(deviceId);
+    if (!wifiManager.autoConnect(apName.c_str())) {
       Serial.println("Gagal menyambung ulang. Restart...");
       delay(3000);
       ESP.restart();

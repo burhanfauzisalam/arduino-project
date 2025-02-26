@@ -1,6 +1,6 @@
 #include <IRremote.h>
 
-#define IR_RECEIVE_PIN 7  // Sesuaikan dengan pin sensor IR
+const int IR_RECEIVE_PIN = "D6";  // Sesuaikan dengan pin sensor IR
 
 void setup() {
     Serial.begin(115200);
